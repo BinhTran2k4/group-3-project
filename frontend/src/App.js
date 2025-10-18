@@ -8,6 +8,8 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Profile from './components/Profile';
 import AdminDashboard from './components/AdminDashboard';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 
 function App() {
   return (
@@ -69,6 +71,8 @@ function App() {
           <Route path="/admin/users" element={<AdminDashboard />} />
           {/* Trang đăng ký */}
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Routes>
       </div>
     </Router>
