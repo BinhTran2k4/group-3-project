@@ -6,6 +6,7 @@ import AddUser from "./components/AddUser";
 import UserList from "./components/UserList";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import Profile from './components/Profile';
 
 function App() {
   return (
@@ -63,7 +64,7 @@ function App() {
 
           {/* Trang đăng nhập */}
           <Route path="/login" element={<Login />} />
-
+          <Route path="/profile" element={<Profile />} />
           {/* Trang đăng ký */}
           <Route path="/signup" element={<Signup />} />
         </Routes>
