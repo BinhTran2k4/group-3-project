@@ -11,13 +11,15 @@ export default function AddUser({ onAdded }) {
 
     // ✅ Validation
     if (!name.trim()) {
-      alert("Name không được để trống");
-      return;
+    //   alert("Name không được để trống");
+        alert("Name không được để trống");
+        return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      alert("Email không hợp lệ");
-      return;
+    //   alert("Email không hợp lệ");
+        alert("Email không hợp lệ");
+        return;
     }
 
     try {
