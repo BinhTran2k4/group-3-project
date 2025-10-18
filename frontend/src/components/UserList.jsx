@@ -5,6 +5,7 @@ export default function UserList() {
   const [users, setUsers] = useState([]);
 
   const fetchUsers = async () => {
+    // const res = await axios.get('http://localhost:3000/api/users');
     const res = await axios.get('http://localhost:3000/api/users');
     setUsers(res.data);
   };

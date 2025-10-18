@@ -7,6 +7,7 @@ export default function AddUser({ onAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // await axios.post('http://localhost:3000/api/users', { name, email });
     await axios.post('http://localhost:3000/api/users', { name, email });
     setName(''); setEmail('');
     onAdded && onAdded();
