@@ -1,18 +1,27 @@
+
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config(); 
+
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/user');
+
+
 const app = express();
 
+
 app.use(cors()); 
-app.use(express.json());
+app.use(express.json()); 
+
 
 connectDB();
 
-const userRoutes = require('./routes/user');
-app.use('/api/auth', authRoutes); 
+app.use('/api/auth', authRoutes);
 
-app.use('/api', userRoutes);
+app.use('/api/users', userRoutes);
 
+
+// --- Khởi động Server ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server đang chạy trên cổng ${PORT}`));
