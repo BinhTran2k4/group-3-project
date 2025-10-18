@@ -1,3 +1,4 @@
+// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -8,8 +9,10 @@ app.use(express.json());
 
 connectDB();
 
+// Import route
 const userRoutes = require('./routes/user');
 
+// Sử dụng route có tiền tố /api
 app.use('/api', userRoutes);
 
 const PORT = process.env.PORT || 3000;
