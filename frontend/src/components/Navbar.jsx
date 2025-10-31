@@ -1,25 +1,38 @@
-// src/components/Navbar.jsx
+// frontend/src/components/Navbar.jsx
 
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axiosInstance from '../api/axiosInstance'; // Import axiosInstance để gọi API logout
 
 const Navbar = () => {
     const navigate = useNavigate();
 
+    const isLoggedIn = !!localStorage.getItem('accessToken');
 
-    const token = localStorage.getItem('token');
-    const userRole = localStorage.getItem('userRole');
-    const isLoggedIn = !!token; 
+    const userString = localStorage.getItem('user');
+    const user = userString ? JSON.parse(userString) : null; // Chuyển chuỗi JSON thành object
 
-    const handleLogout = () => {
 
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRole'); 
+    const handleLogout = async () => {
+        const refreshToken = localStorage.getItem('refreshToken');
+        try {
+            // Gọi API để server xóa refresh token (tăng cường bảo mật)
+            if (refreshToken) {
+                await axiosInstance.post('/auth/logout', { token: refreshToken });
+            }
+        } catch (error) {
+            console.error('Lỗi khi gọi API logout:', error);
+        } finally {
+            // Dù API có lỗi hay không, vẫn xóa thông tin ở client
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
 
-        alert('Bạn đã đăng xuất thành công!');
-        
-        
-        navigate('/login');
+            alert('Bạn đã đăng xuất thành công!');
+            
+            // Tải lại trang để đảm bảo mọi state được reset sạch sẽ
+            window.location.href = '/login';
+        }
     };
 
     return (
@@ -36,17 +49,19 @@ const Navbar = () => {
             </Link>
 
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                {/* 4. Sử dụng Link thay cho thẻ <a> */}
-                {isLoggedIn ? (
-                    // Nếu đã đăng nhập
+                {isLoggedIn && user ? (
+                    // Nếu đã đăng nhập và có thông tin user
                     <>
+                        {/* Chào mừng người dùng */}
+                        <span style={{ color: '#ddd' }}>Chào, {user.name}</span>
+
                         <Link to="/profile" style={{ color: 'white', textDecoration: 'none' }}>
                             Hồ sơ
                         </Link>
 
-                        {/*  HIỂN THỊ LINK NÀY NẾU USER LÀ ADMIN */}
-                        {userRole === 'admin' && (
-                            <Link to="/admin/users" style={{ color: 'yellow', textDecoration: 'none' }}>
+                        {/*  Kiểm tra vai trò từ object user */}
+                        {user.role === 'admin' && (
+                            <Link to="/admin" style={{ color: 'yellow', textDecoration: 'none' }}>
                                 Quản lý Users
                             </Link>
                         )}

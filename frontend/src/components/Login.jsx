@@ -1,8 +1,9 @@
-//frontend/src/components/Login.jsx
+//b6 hd1
+// frontend/src/components/Login.jsx
+
 import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom'; 
-import { jwtDecode } from 'jwt-decode';
+import axios from 'axios'; // Vẫn có thể dùng axios thường cho login/signup
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
@@ -14,17 +15,22 @@ const Login = () => {
     const onSubmit = async e => {
         e.preventDefault();
         try {
+            // ✅ SỬA ĐỔI: API trả về accessToken, refreshToken, và user
             const res = await axios.post('http://localhost:3000/api/auth/login', formData);
             
-            const token = res.data.token;
-            localStorage.setItem('token', token);
+            // ✅ SỬA ĐỔI: Lưu đúng tên token
+            localStorage.setItem('accessToken', res.data.accessToken);
+            localStorage.setItem('refreshToken', res.data.refreshToken);
 
-            const decodedUser = jwtDecode(token).user;
-            localStorage.setItem('userRole', decodedUser.role);
+            // Lưu thông tin user để dễ sử dụng (tên, role, avatar...)
+            // Thay vì decode JWT ở frontend, hãy dùng trực tiếp object user trả về từ API
+            localStorage.setItem('user', JSON.stringify(res.data.user));
 
             alert('Đăng nhập thành công!');
             
-            navigate('/profile'); 
+            // Reload lại trang để Navbar cập nhật trạng thái login
+            // Hoặc sử dụng Redux để quản lý state tốt hơn
+            window.location.href = '/profile';
             
         } catch (err) {
             console.error("CHI TIẾT LỖI:", err);
@@ -39,7 +45,6 @@ const Login = () => {
             <input type="email" name="email" value={email} onChange={onChange} placeholder="Email" required />
             <input type="password" name="password" value={password} onChange={onChange} placeholder="Mật khẩu" required />
             <button type="submit">Đăng Nhập</button>
-
             <div style={{ marginTop: '15px', textAlign: 'center' }}>
                 <Link to="/forgot-password">Quên mật khẩu?</Link>
             </div>
