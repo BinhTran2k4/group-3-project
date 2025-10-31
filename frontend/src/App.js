@@ -1,78 +1,35 @@
 // frontend/src/App.js
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import AddUser from "./components/AddUser";
-import UserList from "./components/UserList";
-import Login from "./components/Login";
-import Signup from "./components/Signup";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Login from './components/Login';
+import Signup from './components/Signup';
 import Profile from './components/Profile';
-import AdminDashboard from './components/AdminDashboard';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
   return (
     <Router>
-      {/* Thanh điều hướng luôn hiển thị */}
       <Navbar />
-
-      <div
-        style={{
-          padding: "40px",
-          fontFamily: "Segoe UI, sans-serif",
-          background: "#f8fafc",
-          minHeight: "100vh",
-        }}
-      >
+      <div className="container" style={{ padding: '20px' }}>
         <Routes>
-          {/* Trang chính: Quản lý người dùng */}
-          <Route
-            path="/"
-            element={
-              <div>
-                <h1
-                  style={{
-                    textAlign: "center",
-                    color: "#028241",
-                    marginBottom: "40px",
-                    fontSize: "2.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  🌿 Quản lý người dùng
-                </h1>
-
-                <div
-                  style={{
-                    maxWidth: "800px",
-                    margin: "0 auto",
-                    background: "white",
-                    borderRadius: "16px",
-                    padding: "30px",
-                    boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  {/* 🧩 Form thêm người dùng */}
-                  {/* <AddUser /> */}
-
-                  <hr style={{ margin: "30px 0" }} />
-
-                  {/* 👥 Danh sách người dùng */}
-                  {/* <UserList /> */}
-                </div>
-              </div>
-            }
-          />
-
-          {/* Trang đăng nhập */}
+          {/* Các Route công khai */}
           <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/admin/users" element={<AdminDashboard />} />
-          {/* Trang đăng ký */}
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+          {/* Các Route cho người dùng đã đăng nhập */}
+          <Route path="/profile" element={<Profile />} />
+          
+          {/*  Đổi path từ "/admin/users" thành "/admin" để khớp với Navbar */}
+          <Route path="/admin" element={<AdminDashboard />} />
+
+          {/* Route mặc định cho trang chủ và trang không tìm thấy */}
+          <Route path="/" element={<h2>Chào mừng đến Trang Chủ</h2>} />
+          <Route path="*" element={<h2>404 - Không tìm thấy trang</h2>} />
         </Routes>
       </div>
     </Router>
