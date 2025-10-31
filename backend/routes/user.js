@@ -1,46 +1,26 @@
+// backend/routes/user.js
+
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 
-// 1. Import đầy đủ các middleware cần thiết
+// 1. Import middleware mới và bỏ isAdmin
 const auth = require('../middleware/auth');
-const isAdmin = require('../middleware/isAdmin');
+const checkRole = require('../middleware/checkRole'); 
 const upload = require('../middleware/upload');
 
-// ==========================================================
-// --- CÁC ROUTE DÀNH CHO USER ĐÃ ĐĂNG NHẬP (Bất kể vai trò) ---
-// ==========================================================
-
-// Lấy thông tin profile của chính mình
+// --- CÁC ROUTE CỦA USER CÁ NHÂN ---
 router.get('/profile', auth, userController.getProfile);
-
-// Cập nhật thông tin profile của chính mình
 router.put('/profile', auth, userController.updateProfile);
-
-// Cập nhật avatar của chính mình
-// Lưu ý: Route này nên là POST /users/avatar để nhất quán với frontend
 router.post('/avatar', auth, upload.single('avatar'), userController.updateAvatar);
 
+// --- CÁC ROUTE QUẢN LÝ (DÀNH CHO ADMIN & MODERATOR) ---
 
-// ==========================================================
-// --- CÁC ROUTE CHỈ DÀNH CHO ADMIN ---
-// ==========================================================
+// 2. Cấp quyền cho cả admin và moderator để xem danh sách user
+router.get('/', [auth, checkRole(['admin', 'moderator'])], userController.getUsers);
 
-// Express sẽ chạy middleware theo thứ tự: `auth` trước, `isAdmin` sau.
-// @route   GET /api/users
-// @access  Private (Admin)
-router.get('/', [auth, isAdmin], userController.getUsers);
-
-// @route   DELETE /api/users/:id
-// @access  Private (Admin)
-router.delete('/:id', [auth, isAdmin], userController.deleteUser);
+// 3. Cấp quyền cho cả admin và moderator để gọi API xóa
+// Logic chi tiết "ai được xóa ai" sẽ nằm trong controller.
+router.delete('/:id', [auth, checkRole(['admin', 'moderator'])], userController.deleteUser);
 
 module.exports = router;
-
-
-
-
-
-
-
-
