@@ -1,16 +1,14 @@
+// backend/controllers/authController.js
 
-// --- Import các thư viện và module cần thiết ---
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
-const nodemailer = require('nodemailer'); 
+const nodemailer = require('nodemailer');
 
-// --- Import các model ---
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
 
-// --- Cấu hình các hằng số từ biến môi trường ---
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = parseInt(process.env.REFRESH_TOKEN_EXPIRY_DAYS) || 7;
@@ -21,34 +19,21 @@ const REFRESH_TOKEN_EXPIRY_DAYS = parseInt(process.env.REFRESH_TOKEN_EXPIRY_DAYS
  * @returns {object} Chứa accessToken, refreshToken, và thông tin user trả về cho client.
  */
 const createAndSendTokens = async (user) => {
-    // ... (Nội dung hàm này giữ nguyên, không thay đổi)
-    const accessToken = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-        expiresIn: JWT_EXPIRES_IN,
-    });
-
+    const accessToken = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     const refreshToken = uuidv4();
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
-    await RefreshToken.create({
-        token: refreshToken,
-        user: user._id,
-        expiresAt: expiresAt,
-    });
+    await RefreshToken.create({ token: refreshToken, user: user._id, expiresAt });
 
-    const userResponse = {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar
-    };
-
+    const userResponse = { id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar };
     return { accessToken, refreshToken, user: userResponse };
 };
 
-
-// --- Các hàm xử lý API ---
-
+/**
+ * @desc    Đăng ký người dùng mới
+ * @route   POST /api/auth/signup
+ * @access  Public
+ */
 exports.signup = async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
@@ -68,10 +53,15 @@ exports.signup = async (req, res) => {
         res.status(201).json(tokens);
     } catch (err) {
         console.error("Lỗi khi đăng ký:", err);
-        res.status(500).json({ message: 'Lỗi máy chủ, vui lòng thử lại sau.' });
+        res.status(500).json({ message: 'Lỗi máy chủ.' });
     }
 };
 
+/**
+ * @desc    Đăng nhập người dùng
+ * @route   POST /api/auth/login
+ * @access  Public
+ */
 exports.login = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -86,10 +76,15 @@ exports.login = async (req, res) => {
         res.status(200).json(tokens);
     } catch (err) {
         console.error("Lỗi khi đăng nhập:", err);
-        res.status(500).json({ message: 'Lỗi máy chủ, vui lòng thử lại sau.' });
+        res.status(500).json({ message: 'Lỗi máy chủ.' });
     }
 };
 
+/**
+ * @desc    Làm mới Access Token
+ * @route   POST /api/auth/refresh
+ * @access  Public
+ */
 exports.refreshToken = async (req, res) => {
     const { token: requestToken } = req.body;
     if (!requestToken) {
@@ -104,9 +99,7 @@ exports.refreshToken = async (req, res) => {
         if (!user) {
             return res.status(403).json({ message: 'Không tìm thấy người dùng được liên kết với token này.' });
         }
-        const newAccessToken = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-            expiresIn: JWT_EXPIRES_IN,
-        });
+        const newAccessToken = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
         res.json({ accessToken: newAccessToken });
     } catch (err) {
         console.error("Lỗi khi làm mới token:", err);
@@ -114,6 +107,11 @@ exports.refreshToken = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Đăng xuất người dùng
+ * @route   POST /api/auth/logout
+ * @access  Public
+ */
 exports.logout = async (req, res) => {
     const { token } = req.body;
     try {
@@ -125,7 +123,6 @@ exports.logout = async (req, res) => {
     }
 };
 
-
 /**
  * @desc    Xử lý yêu cầu quên mật khẩu
  * @route   POST /api/auth/forgot-password
@@ -134,13 +131,14 @@ exports.logout = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
-
         if (!user) {
             return res.status(200).json({ message: 'Nếu email tồn tại, một liên kết đặt lại mật khẩu đã được gửi.' });
         }
 
         const resetToken = crypto.randomBytes(20).toString('hex');
+
         user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        
         user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 phút
         await user.save({ validateBeforeSave: false });
 
@@ -157,10 +155,10 @@ exports.forgotPassword = async (req, res) => {
         });
 
         await transporter.sendMail({
-            from: `Your App Name <${process.env.EMAIL_USER}>`,
+            from: `MyApp <${process.env.EMAIL_USER}>`,
             to: user.email,
             subject: 'Yêu cầu đặt lại mật khẩu',
-            text: `Chào bạn,\n\nVui lòng nhấn vào liên kết sau để đặt lại mật khẩu (link có hiệu lực trong 10 phút):\n\n${resetUrl}`,
+            text: `Bạn nhận được email này vì đã yêu cầu đặt lại mật khẩu. Vui lòng nhấn vào link sau (hiệu lực trong 10 phút):\n\n${resetUrl}`,
         });
 
         res.status(200).json({ message: 'Email hướng dẫn đã được gửi.' });
@@ -178,6 +176,7 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
     try {
         const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        
         const user = await User.findOne({
             resetPasswordToken,
             resetPasswordExpires: { $gt: Date.now() },

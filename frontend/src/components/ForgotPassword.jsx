@@ -1,19 +1,24 @@
 // frontend/src/components/ForgotPassword.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
+import axiosInstance from '../api/axiosInstance'; 
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         setMessage('Đang xử lý...');
         try {
-            const res = await axios.post('http://localhost:3000/api/auth/forgot-password', { email });
+            const res = await axiosInstance.post('/auth/forgot-password', { email });
             setMessage(res.data.message);
         } catch (err) {
             setMessage(err.response?.data?.message || 'Có lỗi xảy ra.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -29,9 +34,14 @@ const ForgotPassword = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                 />
-                <button type="submit">Gửi yêu cầu</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Đang gửi...' : 'Gửi yêu cầu'}
+                </button>
             </form>
             {message && <p>{message}</p>}
+            <div style={{ marginTop: '20px' }}>
+                <Link to="/login">Quay lại trang Đăng nhập</Link>
+            </div>
         </div>
     );
 };
