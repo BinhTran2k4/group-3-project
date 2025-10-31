@@ -2,16 +2,19 @@
 
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../redux/authSlice';
+import axiosInstance from '../api/axiosInstance'; 
 
 const Navbar = () => {
     const navigate = useNavigate();
-    const isLoggedIn = !!localStorage.getItem('accessToken');
-    const userString = localStorage.getItem('user');
-    const user = userString ? JSON.parse(userString) : null;
+    const dispatch = useDispatch(); 
+    
+
+    const { isAuthenticated, user } = useSelector((state) => state.auth);
 
     const handleLogout = async () => {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = localStorage.getItem('refreshToken'); 
         try {
             if (refreshToken) {
                 await axiosInstance.post('/auth/logout', { token: refreshToken });
@@ -19,11 +22,10 @@ const Navbar = () => {
         } catch (error) {
             console.error('Lỗi khi gọi API logout:', error);
         } finally {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
-            alert('Bạn đã đăng xuất thành công!');
-            window.location.href = '/login';
+
+            dispatch(logout()); 
+
+            navigate('/login');
         }
     };
 
@@ -36,7 +38,8 @@ const Navbar = () => {
                 MyApp
             </Link>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                {isLoggedIn && user ? (
+
+                {isAuthenticated && user ? (
                     <>
                         <span style={{ color: '#ddd' }}>Chào, {user.name}</span>
                         <Link to="/profile" style={{ color: 'white', textDecoration: 'none' }}>Hồ sơ</Link>
@@ -47,7 +50,6 @@ const Navbar = () => {
                             </Link>
                         )}
                         
-                        {/* Chỉ admin thấy */}
                         {user.role === 'admin' && (
                              <Link to="/admin/logs" style={{ color: 'cyan', textDecoration: 'none' }}>
                                 Nhật ký
