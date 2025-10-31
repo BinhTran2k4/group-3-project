@@ -5,12 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 
 const Profile = () => {
-
     const initialUser = JSON.parse(localStorage.getItem('user'));
     
     const [user, setUser] = useState(initialUser);
     const [name, setName] = useState(initialUser?.name || '');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!initialUser); 
     const [error, setError] = useState('');
     
     const [file, setFile] = useState(null);
@@ -19,7 +18,6 @@ const Profile = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Nếu không có user ban đầu, chuyển hướng luôn
         if (!initialUser) {
             alert('Vui lòng đăng nhập để truy cập trang này.');
             navigate('/login');
@@ -28,30 +26,27 @@ const Profile = () => {
 
         const fetchProfile = async () => {
             try {
-            
                 const res = await axiosInstance.get('/users/profile');
                 setUser(res.data);
                 setName(res.data.name);
-                // Cập nhật lại user trong localStorage nếu có thay đổi từ server
                 localStorage.setItem('user', JSON.stringify(res.data));
             } catch (err) {
                 console.error('Lỗi lấy profile:', err);
-                // axiosInstance sẽ tự động xử lý việc logout nếu refresh token thất bại
                 setError('Không thể tải thông tin mới nhất.');
             } finally {
                 setLoading(false);
             }
         };
         fetchProfile();
-    }, [navigate]);
+    }, [navigate, initialUser]);
 
     const handleNameUpdate = async (e) => {
         e.preventDefault();
         try {
-
             const res = await axiosInstance.put('/users/profile', { name });
-            setUser(res.data);
-            localStorage.setItem('user', JSON.stringify(res.data)); // Cập nhật lại localStorage
+            const updatedUser = { ...user, name: res.data.name };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
             alert('Cập nhật tên thành công!');
         } catch (err) {
             console.error('Lỗi cập nhật tên:', err);
@@ -71,14 +66,11 @@ const Profile = () => {
         formData.append('avatar', file);
 
         try {
-        
             const res = await axiosInstance.post('/users/avatar', formData, {
-                // Header 'Content-Type' vẫn cần thiết cho việc upload file
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             alert('Upload avatar thành công!');
             
-        
             const updatedUser = { ...user, avatar: res.data.avatar };
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -91,7 +83,7 @@ const Profile = () => {
         }
     };
 
-    if (loading && !user) return <div>Đang tải...</div>;
+    if (loading) return <div>Đang tải...</div>;
     if (error) return <div style={{ color: 'red' }}>{error}</div>;
     if (!user) return <div>Không có thông tin người dùng. Vui lòng đăng nhập.</div>;
 
@@ -100,8 +92,9 @@ const Profile = () => {
             <h2>Trang cá nhân</h2>
             
             <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                {/* Hiển thị ảnh placeholder nếu avatar là 'no-photo.jpg' */}
                 <img 
-                    src={user.avatar} 
+                    src={user.avatar === 'no-photo.jpg' ? `https://ui-avatars.com/api/?name=${user.name}&background=random` : user.avatar} 
                     alt="Avatar" 
                     width="150" 
                     height="150"
