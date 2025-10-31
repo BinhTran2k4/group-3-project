@@ -41,10 +41,16 @@ const Navbar = () => {
                         <span style={{ color: '#ddd' }}>Chào, {user.name}</span>
                         <Link to="/profile" style={{ color: 'white', textDecoration: 'none' }}>Hồ sơ</Link>
                         
-                        {/* ✅ SỬA ĐIỀU KIỆN: Cả admin và moderator đều thấy link này */}
                         {['admin', 'moderator'].includes(user.role) && (
                             <Link to="/admin" style={{ color: 'yellow', textDecoration: 'none' }}>
                                 Quản lý Users
+                            </Link>
+                        )}
+                        
+                        {/* Chỉ admin thấy */}
+                        {user.role === 'admin' && (
+                             <Link to="/admin/logs" style={{ color: 'cyan', textDecoration: 'none' }}>
+                                Nhật ký
                             </Link>
                         )}
 
