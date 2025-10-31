@@ -1,8 +1,11 @@
 // backend/controllers/userController.js
 const User = require('../models/User');
 const cloudinary = require('cloudinary').v2;
+const sharp = require('sharp'); 
 
-// [GET] /api/users/profile - Lấy thông tin của người dùng đang đăng nhập
+// --- CÁC HÀM MỚI CHO PROFILE CÁ NHÂN ---
+
+// [GET] /api/users/profile
 exports.getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -16,7 +19,7 @@ exports.getProfile = async (req, res) => {
     }
 };
 
-// [PUT] /api/users/profile - Cập nhật thông tin của người dùng đang đăng nhập
+// [PUT] /api/users/profile
 exports.updateProfile = async (req, res) => {
     const { name } = req.body; // Chỉ cho phép cập nhật tên ở đây
     try {
@@ -31,7 +34,9 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-// [GET] /api/users - Lấy danh sách tất cả người dùng
+// --- CÁC HÀM DÀNH CHO ADMIN ---
+
+// [GET] /api/users
 exports.getUsers = async (req, res) => {
     try {
         const users = await User.find().select('-password');
@@ -42,34 +47,21 @@ exports.getUsers = async (req, res) => {
     }
 };
 
-// ✅ SỬA LẠI HOÀN TOÀN HÀM NÀY
-// [DELETE] /api/users/:id - Xóa một người dùng bất kỳ theo ID
+// [DELETE] /api/users/:id
 exports.deleteUser = async (req, res) => {
     try {
-        // Tìm người dùng mục tiêu (người sắp bị xóa)
         const userToDelete = await User.findById(req.params.id);
-
         if (!userToDelete) {
             return res.status(404).json({ message: "Không tìm thấy người dùng để xóa." });
         }
-
-        // Lấy thông tin người thực hiện yêu cầu (từ token đã giải mã)
         const requestingUser = req.user;
-
-        // --- QUY TẮC PHÂN QUYỀN ---
-        // 1. Moderator không được phép xóa Admin
         if (userToDelete.role === 'admin' && requestingUser.role === 'moderator') {
             return res.status(403).json({ message: 'Bạn không có quyền xóa tài khoản Admin.' });
         }
-        
-        // 2. Không ai được tự xóa chính mình qua API này
         if (userToDelete.id === requestingUser.id) {
             return res.status(400).json({ message: 'Bạn không thể tự xóa chính mình.' });
         }
-        
-        // Nếu vượt qua các kiểm tra, tiến hành xóa
         await User.findByIdAndDelete(req.params.id);
-        
         res.json({ message: "Người dùng đã được xóa thành công." });
     } catch (err) {
         console.error(err.message);
@@ -84,25 +76,42 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+
 // [POST] /api/users/avatar - Cập nhật ảnh đại diện
 exports.updateAvatar = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'Vui lòng chọn một file ảnh.' });
         }
-        const b64 = Buffer.from(req.file.buffer).toString("base64");
-        let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
-        const result = await cloudinary.uploader.upload(dataURI, {
-            folder: "avatars",
-            resource_type: "image",
+
+        // Dùng sharp để xử lý ảnh: resize thành hình vuông 250x250 và chuyển sang PNG
+        const processedImageBuffer = await sharp(req.file.buffer)
+            .resize(250, 250)
+            .png()
+            .toBuffer();
+
+        // Chuyển buffer đã xử lý thành dạng mà Cloudinary có thể đọc
+        const base64Image = processedImageBuffer.toString('base64');
+        const dataUri = `data:image/png;base64,${base64Image}`;
+
+        // Tải ảnh đã xử lý lên Cloudinary
+        const result = await cloudinary.uploader.upload(dataUri, {
+            folder: 'avatars' // Lưu vào thư mục 'avatars' trên Cloudinary
         });
-        const user = await User.findByIdAndUpdate(req.user.id, { avatar: result.secure_url }, { new: true });
+
+        // Cập nhật lại đường dẫn avatar cho user trong DB
+        const user = await User.findByIdAndUpdate(
+            req.user.id, 
+            { avatar: result.secure_url }, 
+            { new: true }
+        ).select('-password');
+
         res.status(200).json({
             message: 'Upload avatar thành công!',
-            avatar: user.avatar, // Trả về key `avatar` để khớp với frontend
+            avatar: user.avatar, 
         });
     } catch (err) {
         console.error("Lỗi upload avatar:", err);
-        res.status(500).json({ message: 'Lỗi máy chủ' });
+        res.status(500).json({ message: 'Lỗi máy chủ khi upload ảnh.' });
     }
 };
